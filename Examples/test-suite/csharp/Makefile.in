@@ -20,6 +20,7 @@ CPP_TEST_CASES = \
 	complextest \
 	csharp_argument_defaults_feature \
 	csharp_attributes \
+	csharp_composition \
 	csharp_director_typemaps \
 	csharp_exceptions \
 	csharp_features \

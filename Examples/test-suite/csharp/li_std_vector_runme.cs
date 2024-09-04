@@ -673,6 +673,23 @@ public class li_std_vector_runme {
       }
     }
 
+    // Test gc keepalive 1, vector expected not to be gc'd
+    {
+      var (obj, ownerRef) = createGcStruct();
+      gcAssertAlive(obj, ownerRef, "Vector no longer alive (StructVector)", false);
+    }
+
+    // Test gc keepalive 2, vector expected not to be gc'd
+    {
+      var (obj, ownerRef) = createGcStructPtr();
+      gcAssertAlive(obj, ownerRef, "Vector no longer alive (StructPtrVector)", false);
+    }
+
+    // Test gc keepalive 3, vector expected not to be gc'd
+    {
+      var (obj, ownerRef) = createGcStructConstPtr();
+      gcAssertAlive(obj, ownerRef, "Vector no longer alive (StructConstPtrVector)", false);
+    }
   }
 
   private static void check123(StringVector stringv) {
@@ -683,5 +700,39 @@ public class li_std_vector_runme {
       throw new Exception("concatenated string failed: " + concatenated);
   }
 
+
+  private static (Struct,WeakReference<StructVector>) createGcStruct() {
+    StructVector vec = new StructVector();
+    vec.Add(new Struct(42.0));
+    return (vec[0], new WeakReference<StructVector>(vec));
+  }
+
+  private static (Struct,WeakReference<StructPtrVector>) createGcStructPtr() {
+    StructPtrVector vec = new StructPtrVector();
+    vec.Add(new Struct(42.0));
+    return (vec[0], new WeakReference<StructPtrVector>(vec));
+  }
+
+  private static (Struct,WeakReference<StructConstPtrVector>) createGcStructConstPtr() {
+    StructConstPtrVector vec = new StructConstPtrVector();
+    vec.Add(new Struct(42.0));
+    return (vec[0], new WeakReference<StructConstPtrVector>(vec));    
+  }
+
+  private static void gcAssertAlive<TObj,TOwner>(TObj obj, WeakReference<TOwner> ownerRef, string description, bool shouldThrow=true) where TOwner : class
+  {
+    GC.Collect();
+    GC.WaitForPendingFinalizers();
+    GC.Collect();
+
+    if(! ownerRef.TryGetTarget(out var owner)) {
+      if(shouldThrow)
+        throw new Exception(description);
+      else
+        Console.Error.WriteLine(description);
+    }
+
+    GC.KeepAlive(obj);
+  }  
 }
 
